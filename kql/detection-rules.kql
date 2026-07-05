@@ -1,0 +1,57 @@
+ДОДАТОК Б. Kusto Query Language (KQL)-запити, використані під час тестування системи
+
+У додатку наведено основні запити мовою Kusto Query Language (KQL), які використовувалися для аналізу журналів подій у Microsoft Sentinel та Log Analytics Workspace. 
+
+Лістинг 1.1 – KQL-запит для перевірки Heartbeat 
+
+Heartbeat
+| where Computer == "vm-thesis"
+
+Syslog
+| where ProcessName == "sshd"
+
+StorageBlobLogs
+| where OperationName == "DeleteBlob"
+
+Heartbeat  
+| sort by TimeGenerated desc 
+
+Syslog 
+| where TimeGenerated > ago(10m) 
+| sort by TimeGenerated desc
+
+Syslog 
+| where ProcessName == "sshd" 
+| sort by TimeGenerated desc 
+
+
+Лістинг 1.2 – KQL-запит для аналізу Syslog 
+
+
+Syslog 
+| where ProcessName == "sshd" 
+| where SyslogMessage has_any ("Failed password","Invalid user") 
+| extend SourceIP = extract(@"from ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)",1,SyslogMessage) 
+| extend Account = extract(@"for ([^ ]+)",1,SyslogMessage) 
+| summarize FailedAttempts=count() 
+by SourceIP, Account, Computer, bin(TimeGenerated,15m) 
+| where FailedAttempts >= 5 
+
+Syslog 
+| where TimeGenerated > ago(10m) 
+| sort by TimeGenerated desc 
+
+Syslog 
+| where ProcessName == "sshd" 
+| sort by TimeGenerated desc 
+
+Лістинг 1.3 – KQL-запит для виявлення багаторазових SSH-автентифікацій 
+
+Syslog 
+| where ProcessName == "sshd" 
+| where SyslogMessage has_any ("Failed password","Invalid user") 
+| extend SourceIP = extract(@"from ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)",1,SyslogMessage) 
+| extend Account = extract(@"for ([^ ]+)",1,SyslogMessage) 
+| summarize FailedAttempts=count() 
+by SourceIP, Account, Computer, bin(TimeGenerated,15m) 
+| where FailedAttempts >= 5 
